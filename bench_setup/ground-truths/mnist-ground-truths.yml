@@ -1,0 +1,15 @@
+target-options:
+  algorithm: hnswlib
+  dataset: mnist-784-euclidean
+  # M: "[8:64:8]"
+  M: "[8:8:8]"
+  # efConstruction: "[64:512:64]"
+  efConstruction: "[64:64:64]"
+  # efSearch: [[10], [20], [40], [80], [120], [200], [400], [600], [800]]
+  efSearch: [ [40], [80], [120], [200], [400]]
+benchmark-options:
+  definitions: ann_benchmarks/algorithms
+  batch: false
+  parallelism: 1
+  runs: 5
+  k: 10

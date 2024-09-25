@@ -6,12 +6,12 @@ from typing import Any, Optional, Set, Tuple, Iterator
 import h5py
 
 from ann_benchmarks.definitions import Definition
+from ..scripts.models.hnsw_config import HnswConfig
 
-
-def build_result_filepath(dataset_name: Optional[str] = None, 
-                          count: Optional[int] = None, 
-                          definition: Optional[Definition] = None, 
-                          query_arguments: Optional[Any] = None, 
+def build_result_filepath(dataset_name: Optional[str] = None,
+                          count: Optional[int] = None,
+                          definition: Optional[Definition] = None,
+                          query_arguments: Optional[Any] = None,
                           batch_mode: bool = False) -> str:
     """
     Constructs the filepath for storing the results.
@@ -63,15 +63,15 @@ def store_results(dataset_name: str, count: int, definition: Definition, query_a
         times = f.create_dataset("times", (len(results),), "f")
         neighbors = f.create_dataset("neighbors", (len(results), count), "i")
         distances = f.create_dataset("distances", (len(results), count), "f")
-        
+
         for i, (time, ds) in enumerate(results):
             times[i] = time
             neighbors[i] = [n for n, d in ds] + [-1] * (count - len(ds))
             distances[i] = [d for n, d in ds] + [float("inf")] * (count - len(ds))
 
 
-def load_all_results(dataset: Optional[str] = None, 
-                 count: Optional[int] = None, 
+def load_all_results(dataset: Optional[str] = None,
+                 count: Optional[int] = None,
                  batch_mode: bool = False) -> Iterator[Tuple[dict, h5py.File]]:
     """
     Loads all the results from the HDF5 files in the specified path.
@@ -97,6 +97,9 @@ def load_all_results(dataset: Optional[str] = None,
             except Exception:
                 print(f"Was unable to read {filename}")
                 traceback.print_exc()
+
+def load_result(hnsw_config: HnswConfig):
+    filepath = build_result_filepath(hnsw_config.dataset, hnsw_config.count, hnsw_config.definition, hnsw_config.query_arguments, hnsw_config.batch_mode)
 
 
 def get_unique_algorithms() -> Set[str]:
