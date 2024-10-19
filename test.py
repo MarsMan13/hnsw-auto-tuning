@@ -37,7 +37,7 @@ def store_results(results: list[HnswResult]):
     import os
     import csv
 
-    filename = "results_%s_%d.json"%(results[0].dataset, results[0].k)
+    filename = "results_%s_%d.csv"%(results[0].dataset, results[0].k)
     csv_file = os.path.join("results", filename)
 
     with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
@@ -49,12 +49,27 @@ def store_results(results: list[HnswResult]):
                 csvwriter.writerow([result.dataset, result.k, result.ef_construction, result.M, result.ef_search[i], np.mean(result.build_time), result.recall[i], result.qps[i]])
     print("Data successfully written to %s"%csv_file)
 
+def store_hnsw_results(results: list[HnswResult]):
+    import os
+    import csv
+
+    filename = "results_%s_%d.csv"%(results[0].dataset, results[0].k)
+    csv_file = os.path.join("results", filename)
+
+    with open(csv_file, 'w', newline='', encoding='utf-8') as csvfile:
+        csvwriter = csv.writer(csvfile)
+        csvwriter.writerow(["dataset", "k", "efConstruction", "M", "efSearchs", "buildTime", "indexSize", "score"])
+
+        for result in results:
+            csvwriter.writerow([result.dataset, result.k, result.ef_construction, result.M, result.ef_search, np.mean(result.build_time), np.mean(result.index_size), result.score])
+    print("Data successfully written to %s"%csv_file)
+
 def test3():
-    file = "./bench_setup/ground-truths/mnist-ground-truths.yml"
+    file = "./bench_setup/ground-truths/nytimes-256.yml"
     hnsw_config = get_config_from_file(file)
     results = summary(hnsw_config)
     print(len(results))
-    # store_results(results)
+    store_hnsw_results(results)
 
 # TEST : Recall computation
 def test2():

@@ -1,5 +1,6 @@
 from ann_benchmarks import data
 from ..utils import get_range
+import hashlib
 
 class HnswConfig :
 
@@ -40,12 +41,14 @@ class HnswConfig :
             timeout = 2 * 3600
         )
 
-    def to_yaml(self):
-        # TODO: Implement
-        pass
+    def __str__(self):
+        return f"dataset: {self.dataset}, ef_construction: {self.ef_construction}, M: {self.M}, ef_search: {self.ef_search}, k: {self.k}, algorithm: {self.algorithm}, runs: {self.runs}, definitions: {self.definitions}, batch: {self.batch}, parallelism: {self.parallelism}, timeout: {self.timeout}"
+
+    def generate_signature(self):
+        return hashlib.sha256(str(self).encode()).hexdigest()[:10]
 
 class HnswSimpleConfig:
-    def __init__(self, dataset:str, ef_construction:int, M:int, ef_search:list[int], k:int):
+    def __init__(self, dataset:str, M:int, ef_construction:int, ef_search:list[int], k:int):
         self.algorithm = "hnswlib"
         self.dataset = dataset
         self.ef_construction = ef_construction

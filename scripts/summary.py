@@ -1,4 +1,6 @@
 import numpy as np
+import pickle
+import os
 import matplotlib.pyplot as plt
 from .models.hnsw_config import HnswConfig
 from .models.hnsw_result import HnswResult
@@ -6,8 +8,19 @@ from .models.hnsw_result import HnswResult
 from ann_benchmarks.datasets import get_dataset
 from ann_benchmarks.results import hnsw_config_to_files, load_results
 from ann_benchmarks.plotting.utils import compute_metrics, compute_metric
+from .constraints import RESULTS_DIR, RESULTS_TEMP_DIR
 
-def summary(hnsw_config: HnswConfig):
+def summary(hnsw_config: HnswConfig) -> list[HnswResult]:
+    # Use cache if exists
+    cache_filename = f"{hnsw_config.generate_signature()}.pkl"
+    cache_dir = os.path.join(RESULTS_DIR, RESULTS_TEMP_DIR)
+    cache_file = os.path.join(cache_dir, cache_filename) 
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+    if os.path.exists(cache_file):
+        with open(cache_file, "rb") as f:
+            return pickle.load(f)
+    # Process
     dataset, _ = get_dataset(hnsw_config.dataset)
     distance = dataset.attrs["distance"]
 
@@ -31,22 +44,15 @@ def summary(hnsw_config: HnswConfig):
         build_time = np.array([m['build_time'] for m in metrics_list])
         avg_search_time = np.array([m['avg_search_time'] for m in metrics_list])
         median_search_time = np.array([m['median_search_time'] for m in metrics_list])
-
-        # print("\n========================================")
-        # print(config.__str__())
-        # print("Recall: ", recall)
-        # print("QPS: ", qps)
-        # print("Index Size: ", index_size)
-        # print("Build Time: ", build_time)
-        # print("Avg Search Time: ", avg_search_time)
-        # print("Median Search Time: ", median_search_time)
-
+       
         results.append(
             HnswResult.from_config(config)(
                 recall, qps, index_size, build_time, avg_search_time, median_search_time
             )
         )
-
+    # Save cache
+    with open(cache_file, "wb") as f:
+        pickle.dump(results, f)
     return results
 
 def basic_plot(ax, x, y, z, xlabel="X", ylabel="Y", zlabel="Z", title="Result"):
