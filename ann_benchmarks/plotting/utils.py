@@ -64,6 +64,25 @@ def compute_metrics(true_nn_distances, res, metric_1, metric_2, recompute=False)
 
     return all_results
 
+def compute_metric(true_nn_distances, res, metric, recompute=False):
+    properties, run = res
+    ####
+    algo_name = properties["name"]
+    # cache distances to avoid access to hdf5 file
+    run_distances = np.array(run["distances"])
+    # cache times to avoid access to hdf5 file
+    times = np.array(run["times"])
+    if recompute and "metrics" in run:
+        del run["metrics"]
+    metrics_cache = get_or_create_metrics(run)
+
+    metric_value = metrics[metric]["function"](
+        true_nn_distances, run_distances, metrics_cache, times, properties
+    )
+
+    # print("compute_metric: %80s %12.3f" % (algo_name, metric_value))
+
+    return metric_value
 
 def compute_all_metrics(true_nn_distances, run, properties, recompute=False):
     algo = properties["algo"]

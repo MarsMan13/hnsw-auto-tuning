@@ -72,7 +72,7 @@ def run_worker(cpu: int, args: argparse.Namespace, queue: multiprocessing.Queue)
             memory_margin = 500e6  # reserve some extra memory for misc stuff
             mem_limit = int((psutil.virtual_memory().available - memory_margin) / args.parallelism)
             cpu_limit = str(cpu) if not args.batch else f"0-{multiprocessing.cpu_count() - 1}"
-            
+
             run_docker(definition, args.dataset, args.count, args.runs, args.timeout, args.batch, cpu_limit, mem_limit)
 
 
@@ -131,10 +131,10 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def filter_already_run_definitions(
-    definitions: List[Definition], 
-    dataset: str, 
-    count: int, 
-    batch: bool, 
+    definitions: List[Definition],
+    dataset: str,
+    count: int,
+    batch: bool,
     force: bool
 ) -> List[Definition]:
     """Filters out the algorithm definitions based on whether they have already been run or not.
@@ -160,7 +160,7 @@ def filter_already_run_definitions(
 
     for definition in definitions:
         not_yet_run = [
-            query_args 
+            query_args
             for query_args in (definition.query_argument_groups or [[]])
             if force or not os.path.exists(build_result_filepath(dataset, count, definition, query_args, batch))
         ]
@@ -168,7 +168,7 @@ def filter_already_run_definitions(
         if not_yet_run:
             definition = replace(definition, query_argument_groups=not_yet_run) if definition.query_argument_groups else definition
             filtered_definitions.append(definition)
-            
+
     return filtered_definitions
 
 
@@ -194,7 +194,7 @@ def filter_by_available_docker_images(definitions: List[Definition]) -> List[Def
         logger.info(f"not all docker images available, only: {docker_tags}")
         logger.info(f"missing docker images: {missing_docker_images}")
         definitions = [d for d in definitions if d.docker_tag in docker_tags]
-    
+
     return definitions
 
 
@@ -224,7 +224,7 @@ def check_module_import_and_constructor(df: Definition) -> bool:
             f"{df.module}.{df.constructor}({df.arguments}): the module '{df.module}' could not be loaded; skipping"
         )
         return False
-    
+
     return True
 
 def create_workers_and_execute(definitions: List[Definition], args: argparse.Namespace):
@@ -317,10 +317,10 @@ def main():
     )
     random.shuffle(definitions)
 
-    definitions = filter_already_run_definitions(definitions, 
-        dataset=args.dataset, 
-        count=args.count, 
-        batch=args.batch, 
+    definitions = filter_already_run_definitions(definitions,
+        dataset=args.dataset,
+        count=args.count,
+        batch=args.batch,
         force=args.force,
     )
 

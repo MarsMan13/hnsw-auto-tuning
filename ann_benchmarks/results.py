@@ -6,7 +6,7 @@ from typing import Any, Optional, Set, Tuple, Iterator
 import h5py
 
 from ann_benchmarks.definitions import Definition
-from ..scripts.models.hnsw_config import HnswConfig
+from scripts.models.hnsw_config import HnswConfig, HnswSimpleConfig
 
 def build_result_filepath(dataset_name: Optional[str] = None,
                           count: Optional[int] = None,
@@ -98,9 +98,29 @@ def load_all_results(dataset: Optional[str] = None,
                 print(f"Was unable to read {filename}")
                 traceback.print_exc()
 
-def load_result(hnsw_config: HnswConfig):
-    filepath = build_result_filepath(hnsw_config.dataset, hnsw_config.count, hnsw_config.definition, hnsw_config.query_arguments, hnsw_config.batch_mode)
+def hnsw_config_to_files(hnsw_config: HnswConfig, distance:str):
+    for M in hnsw_config.M:
+        for ef_construction in hnsw_config.ef_construction:
+            files = []
+            for ef_search in hnsw_config.ef_search:
+                d = ["results"]
+                d.append(hnsw_config.dataset)
+                d.append(str(hnsw_config.count))
+                d.append(hnsw_config.algorithm)
+                d.append("%s_M_%d_efConstruction_%d_%s.hdf5"
+                        %(distance, M, ef_construction, "_".join(map(str,ef_search))))
+                files.append(os.path.join(*d))
+            yield HnswSimpleConfig(hnsw_config.dataset, M, ef_construction, hnsw_config.ef_search, hnsw_config.count), files
 
+def load_results(files):
+    for file in files:
+        try:
+            with h5py.File(file, "r+") as f:
+                properties = dict(f.attrs)
+                yield (properties, f)
+        except Exception:
+            print(f"Was unable to read {file}")
+            traceback.print_exc()
 
 def get_unique_algorithms() -> Set[str]:
     """

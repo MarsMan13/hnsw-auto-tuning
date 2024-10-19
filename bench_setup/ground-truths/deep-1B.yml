@@ -1,10 +1,8 @@
 target-options:
   algorithm: hnswlib
-  dataset: mnist-784-euclidean
-  # M: "[8:64:8]"
-  M: "[8:16:8]"
+  dataset: deep-image-96-angular
+  M: "[8:64:8]"
   efConstruction: "[64:512:64]"
-  # efSearch: [[10], [20], [40], [80], [120], [200], [400], [600], [800]]
   efSearch: [[16],[24],[32],[48],[64],[96],[128],[256],[512]]
 benchmark-options:
   definitions: ann_benchmarks/algorithms

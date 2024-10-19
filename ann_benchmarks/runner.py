@@ -19,7 +19,7 @@ from .distance import dataset_transform, metrics
 from .results import store_results
 
 
-def run_individual_query(algo: BaseANN, X_train: numpy.array, X_test: numpy.array, distance: str, count: int, 
+def run_individual_query(algo: BaseANN, X_train: numpy.array, X_test: numpy.array, distance: str, count: int,
                          run_count: int, batch: bool) -> Tuple[dict, list]:
     """Run a search query using the provided algorithm and report the results.
 
@@ -40,6 +40,7 @@ def run_individual_query(algo: BaseANN, X_train: numpy.array, X_test: numpy.arra
     )
 
     best_search_time = float("inf")
+    search_times = []
     for i in range(run_count):
         print("Run %d/%d..." % (i + 1, run_count))
         # a bit dumb but can't be a scalar since of Python's scoping rules
@@ -130,11 +131,14 @@ def run_individual_query(algo: BaseANN, X_train: numpy.array, X_test: numpy.arra
         search_time = total_time / len(X_test)
         avg_candidates = total_candidates / len(X_test)
         best_search_time = min(best_search_time, search_time)
-
+        search_times.append(search_time)
+    search_times = numpy.array(search_times)
     verbose = hasattr(algo, "query_verbose")
     attrs = {
         "batch_mode": batch,
         "best_search_time": best_search_time,
+        "avg_search_time": numpy.mean(search_times),
+        "median_search_time": numpy.median(search_times),
         "candidates": avg_candidates,
         "expect_extra": verbose,
         "name": str(algo),
@@ -226,7 +230,7 @@ function"""
             print(f"Running query argument group {pos} of {len(query_argument_groups)}...")
             if query_arguments:
                 algo.set_query_arguments(*query_arguments)
-            
+
             descriptor, results = run_individual_query(algo, X_train, X_test, distance, count, run_count, batch)
 
             descriptor.update({
@@ -328,12 +332,18 @@ def run_docker(
     if mem_limit is None:
         mem_limit = psutil.virtual_memory().available
 
+    import getpass
+    import pwd
+    current_user = pwd.getpwnam(getpass.getuser())
+    uid = current_user.pw_uid
+    gid = current_user.pw_gid
     container = client.containers.run(
         definition.docker_tag,
         cmd,
         volumes={
             os.path.abspath("/var/run/docker.sock"): {"bind": "/var/run/docker.sock", "mode": "rw"},
             os.path.abspath("ann_benchmarks"): {"bind": "/home/app/ann_benchmarks", "mode": "ro"},
+            os.path.abspath("scripts"): {"bind": "/home/app/scripts", "mode": "ro"},
             os.path.abspath("data"): {"bind": "/home/app/data", "mode": "ro"},
             os.path.abspath("results"): {"bind": "/home/app/results", "mode": "rw"},
         },
@@ -341,6 +351,7 @@ def run_docker(
         cpuset_cpus=cpu_limit,
         mem_limit=mem_limit,
         detach=True,
+        user=f"{uid}:{gid}",
     )
     logger = logging.getLogger(f"annb.{container.short_id}")
 
